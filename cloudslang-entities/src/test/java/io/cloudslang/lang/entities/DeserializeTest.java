@@ -17,15 +17,20 @@ import io.cloudslang.lang.entities.bindings.Output;
 import io.cloudslang.lang.entities.bindings.Result;
 import io.cloudslang.lang.entities.bindings.ScriptFunction;
 import io.cloudslang.lang.entities.bindings.values.ValueFactory;
+import io.cloudslang.lang.entities.encryption.DummyEncryptor;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.HashSet;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.ApplicationContext;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -39,9 +44,18 @@ public class DeserializeTest {
 
     private ObjectMapper mapper;
 
+    @Autowired
+    private ApplicationContext applicationContext;
+
     @Before
     public void setUp() throws Exception {
         mapper = new ObjectMapper().enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+
+        // Set up application context
+        Field field = Class.forName("configuration.SlangEntitiesSpringConfig")
+                .getDeclaredField("applicationContext");
+        field.setAccessible(true);
+        field.set(null, applicationContext);
     }
 
     private <T> void testToAndFromJson(Object objToTest, Class<T> type) throws IOException {
@@ -125,5 +139,10 @@ public class DeserializeTest {
     @Configuration
     @ComponentScan("io.cloudslang.lang.entities")
     static class Config {
+
+        @Bean("dummyEncryptor")
+        public DummyEncryptor dummyEncryptor() {
+            return new DummyEncryptor();
+        }
     }
 }
